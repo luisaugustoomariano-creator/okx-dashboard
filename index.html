@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Trade Bot Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    .start { background: #22c55e; }
+    .stop { background: #ef4444; }
+  </style>
+</head>
+
+<body>
+
+  <h1>🚀 Trade Bot Dashboard</h1>
+
+  <div class="card">
+    <p>Saldo: <span id="balance">--</span></p>
+    <p>PNL: <span id="pnl">--</span></p>
+    <p>Status: <span id="status">--</span></p>
+  </div>
+
+  <div class="card">
+    <button class="start" onclick="startBot()">Start</button>
+    <button class="stop" onclick="stopBot()">Stop</button>
+  </div>
+
+  <div class="card">
+    <h3>Logs</h3>
+    <ul id="logs"></ul>
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    async function loadDashboard() {
+      const res = await fetch(API + "/dashboard");
+      const data = await res.json();
+
+      document.getElementById("balance").innerText = data.balance;
+      document.getElementById("pnl").innerText = data.pnl;
+      document.getElementById("status").innerText = data.status;
+    }
+
+    async function loadLogs() {
+      const res = await fetch(API + "/logs");
+      const logs = await res.json();
+
+      const list = document.getElementById("logs");
+      list.innerHTML = "";
+
+      logs.forEach(log => {
+        const li = document.createElement("li");
+        li.innerText = log;
+        list.appendChild(li);
+      });
+    }
+
+    async function startBot() {
+      await fetch(API + "/bot/start", { method: "POST" });
+      loadDashboard();
+    }
+
+    async function stopBot() {
+      await fetch(API + "/bot/stop", { method: "POST" });
+      loadDashboard();
+    }
+
+    // auto refresh
+    setInterval(() => {
+      loadDashboard();
+      loadLogs();
+    }, 3000);
+
+    loadDashboard();
+    loadLogs();
+  </script>
+
+</body>
+</html>
