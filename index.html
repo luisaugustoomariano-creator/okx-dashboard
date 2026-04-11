@@ -29,6 +29,13 @@
 
     .start { background: #22c55e; }
     .stop { background: #ef4444; }
+
+    input {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 6px;
+      border: none;
+    }
   </style>
 </head>
 
@@ -47,12 +54,25 @@
     <button class="stop" onclick="stopBot()">Stop</button>
   </div>
 
+  <!-- 🔥 FILTRO -->
+  <div class="card">
+    <h3>Filtro por Data</h3>
+
+    <label>De:</label>
+    <input type="date" id="startDate">
+
+    <label>Até:</label>
+    <input type="date" id="endDate">
+
+    <button onclick="loadLogs()">Filtrar</button>
+  </div>
+
   <div class="card">
     <h3>Logs</h3>
     <ul id="logs"></ul>
   </div>
 
- <script>
+<script>
   const API = "https://just-peace-production.up.railway.app";
 
   function formatUSD(value) {
@@ -69,47 +89,48 @@
     const data = await res.json();
 
     document.getElementById("balance").innerText = formatUSD(data.balance);
-    const pnlElement = document.getElementById("pnl");
-pnlElement.innerText = formatUSD(data.pnl);
 
-if (data.pnl > 0) {
-  pnlElement.style.color = "#22c55e"; // verde
-} else if (data.pnl < 0) {
-  pnlElement.style.color = "#ef4444"; // vermelho
-} else {
-  pnlElement.style.color = "white";
-}
+    const pnlElement = document.getElementById("pnl");
+    pnlElement.innerText = formatUSD(data.pnl);
+
+    if (data.pnl > 0) {
+      pnlElement.style.color = "#22c55e";
+    } else if (data.pnl < 0) {
+      pnlElement.style.color = "#ef4444";
+    } else {
+      pnlElement.style.color = "white";
+    }
+
     document.getElementById("status").innerText = data.status;
   }
 
-async function loadLogs() {
-  const start = document.getElementById("startDate").value;
-  const end = document.getElementById("endDate").value;
+  async function loadLogs() {
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
 
-  let url = API + "/logs";
+    let url = API + "/logs";
 
-  if (start || end) {
-    url += "?";
+    if (start || end) {
+      url += "?";
+      if (start) url += `start=${start}`;
+      if (end) url += `${start ? "&" : ""}end=${end}`;
+    }
 
-    if (start) url += `start=${start}`;
-    if (end) url += `${start ? "&" : ""}end=${end}`;
+    const res = await fetch(url);
+    const logs = await res.json();
+
+    const list = document.getElementById("logs");
+    list.innerHTML = "";
+
+    logs.forEach(log => {
+      const li = document.createElement("li");
+
+      const pnlFormatted = formatUSD(log.pnl);
+
+      li.innerText = `${new Date(log.time).toLocaleString()} | ${log.pair} | ${log.action} | ${pnlFormatted}`;
+      list.appendChild(li);
+    });
   }
-
-  const res = await fetch(url);
-  const logs = await res.json();
-
-  const list = document.getElementById("logs");
-  list.innerHTML = "";
-
-  logs.forEach(log => {
-    const li = document.createElement("li");
-
-    const pnlFormatted = formatUSD(log.pnl);
-
-    li.innerText = `${log.time} | ${log.pair} | ${log.action} | ${pnlFormatted}`;
-    list.appendChild(li);
-  });
-}
 
   async function startBot() {
     await fetch(API + "/bot/start", { method: "POST" });
@@ -129,6 +150,6 @@ async function loadLogs() {
   loadDashboard();
   loadLogs();
 </script>
-  
+
 </body>
 </html>
