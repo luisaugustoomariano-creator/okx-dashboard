@@ -52,50 +52,71 @@
     <ul id="logs"></ul>
   </div>
 
-  <script>
-    const API = "https://just-peace-production.up.railway.app";
+ <script>
+  const API = "https://just-peace-production.up.railway.app";
 
-    async function loadDashboard() {
-      const res = await fetch(API + "/dashboard");
-      const data = await res.json();
+  function formatUSD(value) {
+    if (value === null || value === undefined) return "--";
 
-      document.getElementById("balance").innerText = data.balance;
-      document.getElementById("pnl").innerText = data.pnl ?? "--";
-      document.getElementById("status").innerText = data.status;
-    }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  }
 
-    async function loadLogs() {
-      const res = await fetch(API + "/logs");
-      const logs = await res.json();
+  async function loadDashboard() {
+    const res = await fetch(API + "/dashboard");
+    const data = await res.json();
 
-      const list = document.getElementById("logs");
-      list.innerHTML = "";
+    document.getElementById("balance").innerText = formatUSD(data.balance);
+    const pnlElement = document.getElementById("pnl");
+pnlElement.innerText = formatUSD(data.pnl);
 
-      logs.forEach(log => {
-        const li = document.createElement("li");
-        li.innerText = `${log.pair} | ${log.action} | PnL: ${log.pnl}`;
-        list.appendChild(li);
-      });
-    }
+if (data.pnl > 0) {
+  pnlElement.style.color = "#22c55e"; // verde
+} else if (data.pnl < 0) {
+  pnlElement.style.color = "#ef4444"; // vermelho
+} else {
+  pnlElement.style.color = "white";
+}
+    document.getElementById("status").innerText = data.status;
+  }
 
-    async function startBot() {
-      await fetch(API + "/bot/start", { method: "POST" });
-      loadDashboard();
-    }
+  async function loadLogs() {
+    const res = await fetch(API + "/logs");
+    const logs = await res.json();
 
-    async function stopBot() {
-      await fetch(API + "/bot/stop", { method: "POST" });
-      loadDashboard();
-    }
+    const list = document.getElementById("logs");
+    list.innerHTML = "";
 
-    setInterval(() => {
-      loadDashboard();
-      loadLogs();
-    }, 3000);
+    logs.forEach(log => {
+      const li = document.createElement("li");
 
+      const pnlFormatted = formatUSD(log.pnl);
+
+      li.innerText = `${log.pair} | ${log.action} | ${pnlFormatted}`;
+      list.appendChild(li);
+    });
+  }
+
+  async function startBot() {
+    await fetch(API + "/bot/start", { method: "POST" });
+    loadDashboard();
+  }
+
+  async function stopBot() {
+    await fetch(API + "/bot/stop", { method: "POST" });
+    loadDashboard();
+  }
+
+  setInterval(() => {
     loadDashboard();
     loadLogs();
-  </script>
+  }, 3000);
 
+  loadDashboard();
+  loadLogs();
+</script>
+  
 </body>
 </html>
