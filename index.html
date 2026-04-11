@@ -82,22 +82,34 @@ if (data.pnl > 0) {
     document.getElementById("status").innerText = data.status;
   }
 
-  async function loadLogs() {
-    const res = await fetch(API + "/logs");
-    const logs = await res.json();
+async function loadLogs() {
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
 
-    const list = document.getElementById("logs");
-    list.innerHTML = "";
+  let url = API + "/logs";
 
-    logs.forEach(log => {
-      const li = document.createElement("li");
+  if (start || end) {
+    url += "?";
 
-      const pnlFormatted = formatUSD(log.pnl);
-
-      li.innerText = `${log.pair} | ${log.action} | ${pnlFormatted}`;
-      list.appendChild(li);
-    });
+    if (start) url += `start=${start}`;
+    if (end) url += `${start ? "&" : ""}end=${end}`;
   }
+
+  const res = await fetch(url);
+  const logs = await res.json();
+
+  const list = document.getElementById("logs");
+  list.innerHTML = "";
+
+  logs.forEach(log => {
+    const li = document.createElement("li");
+
+    const pnlFormatted = formatUSD(log.pnl);
+
+    li.innerText = `${log.time} | ${log.pair} | ${log.action} | ${pnlFormatted}`;
+    list.appendChild(li);
+  });
+}
 
   async function startBot() {
     await fetch(API + "/bot/start", { method: "POST" });
