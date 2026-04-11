@@ -1,581 +1,477 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jarvis Cripto • Dashboard</title>
+  <title>Jarvis Cripto Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg-1: #0b1020;
-      --bg-2: #121a33;
-      --card: rgba(255, 255, 255, 0.07);
-      --card-border: rgba(255, 255, 255, 0.12);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --green: #22c55e;
-      --red: #ef4444;
-      --blue: #3b82f6;
-      --yellow: #eab308;
-      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-      --input-bg: rgba(15, 23, 42, 0.6);
-      --input-border: rgba(148, 163, 184, 0.28);
-      --list-border: rgba(148, 163, 184, 0.12);
+      --bg: #0b1020;
+      --surface: #111936;
+      --surface-soft: #1a2548;
+      --text: #e9eefb;
+      --muted: #9fb0df;
+      --primary: #4f7cff;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border: #25325f;
+      --shadow: 0 14px 38px rgba(0,0,0,.3);
     }
 
-    body.light {
-      --bg-1: #f4f7ff;
-      --bg-2: #eaf0ff;
-      --card: rgba(255, 255, 255, 0.86);
-      --card-border: rgba(15, 23, 42, 0.12);
-      --text: #0f172a;
-      --muted: #475569;
-      --shadow: 0 16px 35px rgba(2, 6, 23, 0.12);
-      --input-bg: rgba(255, 255, 255, 0.9);
-      --input-border: rgba(100, 116, 139, 0.3);
-      --list-border: rgba(100, 116, 139, 0.15);
+    html[data-theme="light"] {
+      --bg: #f3f6ff;
+      --surface: #ffffff;
+      --surface-soft: #eef2ff;
+      --text: #17223f;
+      --muted: #546188;
+      --primary: #375dfb;
+      --success: #0f9f55;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --border: #d9e0ff;
+      --shadow: 0 10px 28px rgba(55,93,251,.14);
     }
 
-    * {
-      box-sizing: border-box;
+    * { box-sizing: border-box; }
+
+    body {
       margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      height: 100%;
-      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 10% 10%, rgba(29, 78, 216, 0.35) 0%, transparent 35%),
-        radial-gradient(circle at 90% 20%, rgba(124, 58, 237, 0.30) 0%, transparent 30%),
-        linear-gradient(135deg, var(--bg-1), var(--bg-2));
-      transition: background 0.25s ease, color 0.25s ease;
-    }
-
-    .page {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
-    }
-
-    .title-wrap h1 {
-      font-size: 1.8rem;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-    }
-
-    .title-wrap p {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      border: 1px solid var(--card-border);
-      background: var(--card);
-      backdrop-filter: blur(8px);
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 0.85rem;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: radial-gradient(1200px 500px at 20% -10%, #293b7f4a, transparent), var(--bg);
       color: var(--text);
     }
 
-    .theme-toggle {
-      border: 1px solid var(--card-border);
-      background: var(--card);
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 700;
-      transition: transform 0.15s ease, opacity 0.2s ease;
-    }
-
-    .theme-toggle:hover {
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-
-    .grid {
+    .container {
+      width: min(1240px, 94vw);
+      margin: 26px auto;
       display: grid;
-      grid-template-columns: repeat(12, 1fr);
       gap: 16px;
     }
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-      transition: background 0.25s ease, border-color 0.25s ease;
-    }
-
-    .metric {
-      grid-column: span 4;
-      min-height: 120px;
+    .topbar {
       display: flex;
-      flex-direction: column;
       justify-content: space-between;
-    }
-
-    .metric .label {
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-bottom: 10px;
-    }
-
-    .metric .value {
-      font-size: 1.8rem;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      line-height: 1.1;
-    }
-
-    .metric .hint {
-      font-size: 0.82rem;
-      color: var(--muted);
-      opacity: 0.95;
-    }
-
-    .controls {
-      grid-column: span 12;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
       align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
+
+    .title h1 {
+      margin: 0;
+      font-size: 1.7rem;
+    }
+
+    .title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .btn {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 16px;
-      color: white;
-      font-weight: 700;
-      font-size: 0.92rem;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 14px;
       cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+      font-weight: 600;
     }
 
-    .btn:hover {
-      transform: translateY(-1px);
-      opacity: 0.95;
+    .btn.primary { background: linear-gradient(135deg, var(--primary), #6e95ff); color: #fff; border-color: transparent; }
+    .btn.success { background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border-color: transparent; }
+    .btn.danger { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; border-color: transparent; }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(180px, 1fr));
+      gap: 12px;
     }
 
-    .btn:active {
-      transform: translateY(0);
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: var(--shadow);
     }
 
-    .btn-start {
-      background: linear-gradient(135deg, #16a34a, #22c55e);
-      box-shadow: 0 10px 24px rgba(34, 197, 94, 0.28);
+    .metric-label { color: var(--muted); font-size: .84rem; }
+    .metric-value { margin-top: 6px; font-size: 1.4rem; font-weight: 700; }
+    .ok { color: var(--success); }
+    .bad { color: var(--danger); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
     }
 
-    .btn-stop {
-      background: linear-gradient(135deg, #dc2626, #ef4444);
-      box-shadow: 0 10px 24px rgba(239, 68, 68, 0.28);
-    }
+    .chart-wrap { min-height: 310px; }
 
-    .btn-filter {
-      background: linear-gradient(135deg, #2563eb, #3b82f6);
-      box-shadow: 0 10px 24px rgba(59, 130, 246, 0.28);
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 700;
     }
 
     .filters {
-      grid-column: span 12;
       display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 10px;
-      align-items: end;
+      grid-template-columns: repeat(6, minmax(120px,1fr));
+      gap: 8px;
     }
 
-    .field {
-      grid-column: span 4;
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-
-    .field label {
-      font-size: 0.84rem;
-      color: var(--muted);
-    }
-
-    .field input {
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
+    input, select {
+      width: 100%;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
       color: var(--text);
       border-radius: 10px;
-      padding: 11px 12px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      padding: 9px 10px;
     }
 
-    .field input:focus {
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
     }
 
-    .logs-card {
-      grid-column: span 12;
-      padding: 0;
-      overflow: hidden;
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
     }
 
-    .logs-header {
-      padding: 16px 18px;
-      border-bottom: 1px solid var(--card-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    th { color: var(--muted); font-weight: 600; }
+    .table-wrap { overflow-x: auto; }
 
-    .logs-header h3 {
-      font-size: 1.03rem;
-    }
-
-    .logs-count {
-      color: var(--muted);
-      font-size: 0.84rem;
-    }
-
-    .logs {
-      list-style: none;
-      max-height: 420px;
-      overflow: auto;
-    }
-
-    .logs li {
-      padding: 13px 18px;
-      border-bottom: 1px solid var(--list-border);
-      display: grid;
-      grid-template-columns: 190px 110px 100px 1fr;
-      gap: 10px;
-      font-size: 0.9rem;
-      align-items: center;
-    }
-
-    .logs li:last-child {
-      border-bottom: none;
-    }
-
-    .log-time {
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.78rem;
+    .pill {
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: .78rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      border: 1px solid transparent;
-      width: fit-content;
+      display: inline-block;
     }
 
-    .badge-running {
-      background: rgba(34, 197, 94, 0.18);
-      color: #86efac;
-      border-color: rgba(34, 197, 94, 0.35);
-    }
+    .pill.buy { background: #1e8e4a33; color: var(--success); }
+    .pill.sell { background: #ef444433; color: var(--danger); }
 
-    .badge-stopped {
-      background: rgba(239, 68, 68, 0.18);
-      color: #fca5a5;
-      border-color: rgba(239, 68, 68, 0.35);
-    }
-
-    .badge-neutral {
-      background: rgba(234, 179, 8, 0.14);
-      color: #fde68a;
-      border-color: rgba(234, 179, 8, 0.3);
-    }
-
-    .pnl-pos { color: #16a34a; font-weight: 700; }
-    .pnl-neg { color: #dc2626; font-weight: 700; }
-    .pnl-zero { color: var(--text); font-weight: 700; }
-
-    .empty {
-      padding: 26px 18px;
+    .footer-note {
+      text-align: right;
       color: var(--muted);
-      text-align: center;
-      font-size: 0.92rem;
+      font-size: .82rem;
     }
 
-    @media (max-width: 960px) {
-      .metric { grid-column: span 6; }
-      .field { grid-column: span 6; }
-      .logs li {
-        grid-template-columns: 1fr;
-        gap: 6px;
-      }
+    @media (max-width: 1080px) {
+      .grid-cards { grid-template-columns: repeat(2, minmax(150px,1fr)); }
+      .layout { grid-template-columns: 1fr; }
+      .filters { grid-template-columns: repeat(2, minmax(140px,1fr)); }
     }
 
     @media (max-width: 640px) {
-      .metric { grid-column: span 12; }
-      .field { grid-column: span 12; }
-      .title-wrap h1 { font-size: 1.45rem; }
+      .grid-cards { grid-template-columns: 1fr; }
+      .filters { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <main class="page">
-    <header class="header">
-      <div class="title-wrap">
-        <h1>🚀 Jarvis Cripto Dashboard</h1>
-        <p>Monitoramento em tempo real do bot com visual premium.</p>
+  <div class="container">
+    <section class="topbar">
+      <div class="title">
+        <h1>🧠 Jarvis Cripto Dashboard</h1>
+        <p>Monitoramento avançado de performance e execução do bot em tempo real.</p>
       </div>
-
-      <div class="header-actions">
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Dark</button>
-        <div class="chip" id="lastUpdate">Última atualização: --</div>
+      <div class="actions">
+        <button class="btn success" onclick="startBot()">Iniciar Bot</button>
+        <button class="btn danger" onclick="stopBot()">Parar Bot</button>
+        <button class="btn primary" id="themeBtn" onclick="toggleTheme()">🌙/☀️ Tema</button>
       </div>
-    </header>
+    </section>
 
-    <section class="grid">
-      <article class="card metric">
-        <div class="label">Saldo</div>
-        <div class="value" id="balance">--</div>
-        <div class="hint">Conta principal</div>
-      </article>
+    <section class="grid-cards">
+      <article class="card"><div class="metric-label">Saldo (USDT)</div><div class="metric-value" id="balance">--</div></article>
+      <article class="card"><div class="metric-label">PNL Total</div><div class="metric-value" id="pnlTotal">--</div></article>
+      <article class="card"><div class="metric-label">Win Rate</div><div class="metric-value" id="winRate">--</div></article>
+      <article class="card"><div class="metric-label">Status do Bot</div><div class="metric-value" id="status">--</div></article>
+      <article class="card"><div class="metric-label">Trades (Total)</div><div class="metric-value" id="totalTrades">--</div></article>
+    </section>
 
-      <article class="card metric">
-        <div class="label">PNL</div>
-        <div class="value" id="pnl">--</div>
-        <div class="hint">Resultado acumulado</div>
-      </article>
-
-      <article class="card metric">
-        <div class="label">Status do Bot</div>
-        <div class="value"><span class="badge badge-neutral" id="statusBadge">--</span></div>
-        <div class="hint" id="statusText">Sem status</div>
-      </article>
-
-      <article class="card controls">
-        <button class="btn btn-start" onclick="startBot()">▶ Start Bot</button>
-        <button class="btn btn-stop" onclick="stopBot()">■ Stop Bot</button>
-      </article>
-
-      <article class="card filters">
-        <div class="field">
-          <label for="startDate">De</label>
-          <input type="date" id="startDate" />
+    <section class="layout">
+      <article class="card chart-wrap">
+        <div class="panel-title">
+          <span>📈 Evolução de PNL</span>
+          <small id="updatedAt">--</small>
         </div>
-
-        <div class="field">
-          <label for="endDate">Até</label>
-          <input type="date" id="endDate" />
-        </div>
-
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn btn-filter" onclick="loadLogs()">Filtrar logs</button>
-        </div>
+        <canvas id="pnlChart"></canvas>
       </article>
 
-      <article class="card logs-card">
-        <div class="logs-header">
-          <h3>Logs de Trades</h3>
-          <span class="logs-count" id="logsCount">0 registros</span>
-        </div>
-        <ul class="logs" id="logs"></ul>
+      <article class="card chart-wrap">
+        <div class="panel-title"><span>🎯 Distribuição BUY/SELL</span></div>
+        <canvas id="actionsChart"></canvas>
       </article>
     </section>
-  </main>
+
+    <section class="card">
+      <div class="panel-title"><span>🔎 Filtros de Histórico (máx. 50)</span></div>
+      <div class="filters">
+        <input type="date" id="startDate" />
+        <input type="date" id="endDate" />
+        <input type="text" id="pair" placeholder="Par (ex: BTC-USDT)" />
+        <select id="action">
+          <option value="">Ação (todas)</option>
+          <option value="BUY">BUY</option>
+          <option value="SELL">SELL</option>
+        </select>
+        <input type="text" id="reason" placeholder="Motivo (ex: stop)" />
+        <div style="display:flex; gap:8px;">
+          <button class="btn primary" onclick="loadLogs()">Aplicar</button>
+          <button class="btn" onclick="resetFilters()">Limpar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card table-wrap">
+      <div class="panel-title"><span>📚 Histórico de Trades</span><small id="logCount">0 registros</small></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Par</th>
+            <th>Ação</th>
+            <th>Preço</th>
+            <th>PNL</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody id="logsTable"></tbody>
+      </table>
+    </section>
+
+    <div class="footer-note">Atualização automática a cada 5 segundos • Estilo Jarvis ativo</div>
+  </div>
 
   <script>
+    // API fixa no endpoint atual da Railway (conforme solicitado)
     const API = "https://just-peace-production.up.railway.app";
+
+    let pnlChart;
+    let actionsChart;
 
     function formatUSD(value) {
       if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD"
-      }).format(value);
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value));
     }
 
-    function formatDateTime(value) {
-      try {
-        return new Date(value).toLocaleString("pt-BR");
-      } catch {
-        return "--";
-      }
+    function formatPct(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+      return `${Number(value).toFixed(2)}%`;
     }
 
-    function updateLastUpdate() {
-      const now = new Date().toLocaleTimeString("pt-BR");
-      document.getElementById("lastUpdate").innerText = `Última atualização: ${now}`;
+    function getPayload(json) {
+      return (json && typeof json === "object" && "data" in json) ? json.data : json;
     }
 
-    function applyTheme(theme) {
-      document.body.classList.toggle("light", theme === "light");
-      const btn = document.getElementById("themeToggle");
-      btn.innerText = theme === "light" ? "☀️ Light" : "🌙 Dark";
-      localStorage.setItem("theme", theme);
+    async function fetchJson(url, options = {}) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    function updateThemeButton() {
+      const theme = document.documentElement.getAttribute("data-theme");
+      document.getElementById("themeBtn").textContent = theme === "dark" ? "☀️ Modo Claro" : "🌙 Modo Escuro";
     }
 
     function toggleTheme() {
-      const current = document.body.classList.contains("light") ? "light" : "dark";
-      applyTheme(current === "light" ? "dark" : "light");
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("jarvis_theme", next);
+      updateThemeButton();
     }
 
-    function updateStatus(status) {
-      const statusBadge = document.getElementById("statusBadge");
-      const statusText = document.getElementById("statusText");
-      const normalized = (status || "").toString().toLowerCase();
-
-      statusBadge.className = "badge";
-      if (normalized.includes("run") || normalized.includes("ativo") || normalized.includes("on")) {
-        statusBadge.classList.add("badge-running");
-      } else if (normalized.includes("stop") || normalized.includes("off") || normalized.includes("parado")) {
-        statusBadge.classList.add("badge-stopped");
-      } else {
-        statusBadge.classList.add("badge-neutral");
-      }
-
-      statusBadge.innerText = status || "--";
-      statusText.innerText = status ? `Bot atualmente: ${status}` : "Sem status";
+    function initTheme() {
+      const saved = localStorage.getItem("jarvis_theme") || "dark";
+      document.documentElement.setAttribute("data-theme", saved);
+      updateThemeButton();
     }
 
-    async function getPnlFallbackFromLogs() {
-      try {
-        const res = await fetch(`${API}/logs`);
-        const logs = await res.json();
-        if (!Array.isArray(logs)) return 0;
-        return logs.reduce((sum, item) => sum + (Number(item.pnl) || 0), 0);
-      } catch (error) {
-        console.error("Erro ao calcular PNL fallback:", error);
-        return 0;
-      }
+    function updateCard(elId, value, className = "") {
+      const el = document.getElementById(elId);
+      el.textContent = value;
+      el.classList.remove("ok", "bad");
+      if (className) el.classList.add(className);
     }
 
     async function loadDashboard() {
-      try {
-        const res = await fetch(`${API}/dashboard`);
-        const data = await res.json();
+      const raw = await fetchJson(`${API}/dashboard`);
+      const data = getPayload(raw) || {};
 
-        document.getElementById("balance").innerText = formatUSD(data.balance);
+      updateCard("balance", formatUSD(data.balance));
 
-        let pnlValue = Number(data.pnl);
-        if (!Number.isFinite(pnlValue)) {
-          pnlValue = await getPnlFallbackFromLogs();
-        }
+      const pnlClass = Number(data.pnl || 0) > 0 ? "ok" : Number(data.pnl || 0) < 0 ? "bad" : "";
+      updateCard("pnlTotal", formatUSD(data.pnl), pnlClass);
 
-        const pnlElement = document.getElementById("pnl");
-        pnlElement.innerText = formatUSD(pnlValue);
+      updateCard("status", data.status || "--", data.status === "ON" ? "ok" : "bad");
+      document.getElementById("updatedAt").textContent = `Atualizado: ${new Date().toLocaleString("pt-BR")}`;
+    }
 
-        pnlElement.classList.remove("pnl-pos", "pnl-neg", "pnl-zero");
-        if (pnlValue > 0) pnlElement.classList.add("pnl-pos");
-        else if (pnlValue < 0) pnlElement.classList.add("pnl-neg");
-        else pnlElement.classList.add("pnl-zero");
+    async function loadSummary() {
+      const raw = await fetchJson(`${API}/stats/summary`);
+      const data = getPayload(raw) || {};
 
-        updateStatus(data.status);
-      } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
-      } finally {
-        updateLastUpdate();
-      }
+      updateCard("winRate", formatPct(data.win_rate), Number(data.win_rate || 0) >= 50 ? "ok" : "bad");
+      updateCard("totalTrades", String(data.total_trades ?? "--"));
+
+      renderActionsChart(data.total_buys || 0, data.total_sells || 0);
+    }
+
+    async function loadPnlHistory() {
+      const raw = await fetchJson(`${API}/stats/pnl-history?interval=day&limit=50`);
+      const data = getPayload(raw) || {};
+      const items = data.items || [];
+
+      renderPnlChart(items.map(i => new Date(i.time).toLocaleDateString("pt-BR")), items.map(i => Number(i.pnl_cumulative || 0)));
     }
 
     async function loadLogs() {
-      try {
-        const start = document.getElementById("startDate").value;
-        const end = document.getElementById("endDate").value;
+      const params = new URLSearchParams();
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+      const pair = document.getElementById("pair").value.trim();
+      const action = document.getElementById("action").value;
+      const reason = document.getElementById("reason").value.trim();
 
-        let url = `${API}/logs`;
-        const params = new URLSearchParams();
-        if (start) params.append("start", start);
-        if (end) params.append("end", end);
-        if ([...params].length) url += `?${params.toString()}`;
+      if (start) params.append("start", start);
+      if (end) params.append("end", end);
+      if (pair) params.append("pair", pair.toUpperCase());
+      if (action) params.append("action", action);
+      if (reason) params.append("reason", reason);
+      params.append("limit", "50");
 
-        const res = await fetch(url);
-        const logs = await res.json();
+      const raw = await fetchJson(`${API}/logs?${params.toString()}`);
+      const payload = getPayload(raw) || {};
+      const logs = payload.items || [];
 
-        const list = document.getElementById("logs");
-        list.innerHTML = "";
+      const tbody = document.getElementById("logsTable");
+      tbody.innerHTML = "";
 
-        if (!Array.isArray(logs) || logs.length === 0) {
-          list.innerHTML = `<li class="empty">Nenhum log encontrado para o período selecionado.</li>`;
-          document.getElementById("logsCount").innerText = "0 registros";
-          return;
-        }
+      logs.forEach(log => {
+        const tr = document.createElement("tr");
+        const pnl = Number(log.pnl || 0);
+        const pnlClass = pnl > 0 ? "ok" : pnl < 0 ? "bad" : "";
 
-        logs.forEach((log) => {
-          const li = document.createElement("li");
+        tr.innerHTML = `
+          <td>${new Date(log.time).toLocaleString("pt-BR")}</td>
+          <td>${log.pair}</td>
+          <td><span class="pill ${String(log.action || "").toLowerCase()}">${log.action}</span></td>
+          <td>${formatUSD(log.price)}</td>
+          <td class="${pnlClass}">${formatUSD(pnl)}</td>
+          <td>${log.reason || "--"}</td>
+        `;
 
-          const pnlValue = Number(log.pnl);
-          const pnlClass = pnlValue > 0 ? "pnl-pos" : pnlValue < 0 ? "pnl-neg" : "pnl-zero";
-          const action = (log.action || "--").toString().toUpperCase();
+        tbody.appendChild(tr);
+      });
 
-          li.innerHTML = `
-            <span class="log-time">${formatDateTime(log.time)}</span>
-            <span>${log.pair || "--"}</span>
-            <span>${action}</span>
-            <span class="${pnlClass}">${formatUSD(log.pnl)}</span>
-          `;
-          list.appendChild(li);
-        });
+      document.getElementById("logCount").textContent = `${logs.length} registros`;
+    }
 
-        document.getElementById("logsCount").innerText = `${logs.length} registro(s)`;
-      } catch (error) {
-        console.error("Erro ao carregar logs:", error);
-      }
+    function resetFilters() {
+      ["startDate", "endDate", "pair", "action", "reason"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el.tagName === "SELECT") el.selectedIndex = 0;
+        else el.value = "";
+      });
+      loadLogs();
     }
 
     async function startBot() {
-      try {
-        await fetch(`${API}/bot/start`, { method: "POST" });
-      } catch (error) {
-        console.error("Erro ao iniciar bot:", error);
-      } finally {
-        loadDashboard();
-      }
+      await fetchJson(`${API}/bot/start`, { method: "POST" });
+      await refreshAll();
     }
 
     async function stopBot() {
+      await fetchJson(`${API}/bot/stop`, { method: "POST" });
+      await refreshAll();
+    }
+
+    function renderPnlChart(labels, values) {
+      const ctx = document.getElementById("pnlChart");
+      if (pnlChart) pnlChart.destroy();
+
+      pnlChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "PNL acumulado",
+            data: values,
+            borderColor: "#4f7cff",
+            backgroundColor: "rgba(79,124,255,0.18)",
+            borderWidth: 2,
+            fill: true,
+            tension: 0.32
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') } } },
+          scales: {
+            x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } },
+            y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } }
+          }
+        }
+      });
+    }
+
+    function renderActionsChart(buys, sells) {
+      const ctx = document.getElementById("actionsChart");
+      if (actionsChart) actionsChart.destroy();
+
+      actionsChart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["BUY", "SELL"],
+          datasets: [{
+            data: [buys, sells],
+            backgroundColor: ["#22c55e", "#ef4444"],
+            borderWidth: 0,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text')
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function refreshAll() {
       try {
-        await fetch(`${API}/bot/stop`, { method: "POST" });
+        await Promise.all([loadDashboard(), loadSummary(), loadPnlHistory(), loadLogs()]);
       } catch (error) {
-        console.error("Erro ao parar bot:", error);
-      } finally {
-        loadDashboard();
+        console.error("Erro ao atualizar dashboard:", error);
       }
     }
 
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    applyTheme(savedTheme);
-
-    setInterval(() => {
-      loadDashboard();
-      loadLogs();
-    }, 3000);
-
-    loadDashboard();
-    loadLogs();
+    initTheme();
+    refreshAll();
+    setInterval(refreshAll, 5000);
   </script>
 </body>
 </html>
+
 
 
