@@ -53,14 +53,14 @@
   </div>
 
   <script>
-    const API = "http://localhost:8000";
+    const API = "https://just-peace-production.up.railway.app";
 
     async function loadDashboard() {
       const res = await fetch(API + "/dashboard");
       const data = await res.json();
 
       document.getElementById("balance").innerText = data.balance;
-      document.getElementById("pnl").innerText = data.pnl;
+      document.getElementById("pnl").innerText = data.pnl ?? "--";
       document.getElementById("status").innerText = data.status;
     }
 
@@ -73,7 +73,7 @@
 
       logs.forEach(log => {
         const li = document.createElement("li");
-        li.innerText = log;
+        li.innerText = `${log.pair} | ${log.action} | PnL: ${log.pnl}`;
         list.appendChild(li);
       });
     }
@@ -88,7 +88,6 @@
       loadDashboard();
     }
 
-    // auto refresh
     setInterval(() => {
       loadDashboard();
       loadLogs();
