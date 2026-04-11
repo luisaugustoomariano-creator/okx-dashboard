@@ -110,7 +110,27 @@
       gap: 16px;
     }
 
-    .chart-wrap { min-height: 310px; }
+    .chart-wrap {
+      min-height: 360px;
+      max-height: 360px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-canvas-container {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      height: 300px;
+      max-height: 300px;
+      width: 100%;
+    }
+
+    .chart-canvas-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
 
     .panel-title {
       display: flex;
@@ -168,6 +188,8 @@
     }
 
     @media (max-width: 1080px) {
+      .chart-wrap { min-height: 330px; max-height: 330px; }
+      .chart-canvas-container { height: 270px; max-height: 270px; }
       .grid-cards { grid-template-columns: repeat(2, minmax(150px,1fr)); }
       .layout { grid-template-columns: 1fr; }
       .filters { grid-template-columns: repeat(2, minmax(140px,1fr)); }
@@ -207,12 +229,16 @@
           <span>📈 Evolução de PNL</span>
           <small id="updatedAt">--</small>
         </div>
-        <canvas id="pnlChart"></canvas>
+        <div class="chart-canvas-container">
+          <canvas id="pnlChart" height="300"></canvas>
+        </div>
       </article>
 
       <article class="card chart-wrap">
         <div class="panel-title"><span>🎯 Distribuição BUY/SELL</span></div>
-        <canvas id="actionsChart"></canvas>
+        <div class="chart-canvas-container">
+          <canvas id="actionsChart" height="300"></canvas>
+        </div>
       </article>
     </section>
 
