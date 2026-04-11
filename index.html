@@ -87,7 +87,7 @@
 
     .grid-cards {
       display: grid;
-      grid-template-columns: repeat(5, minmax(180px, 1fr));
+      grid-template-columns: repeat(6, minmax(160px, 1fr));
       gap: 12px;
     }
 
@@ -100,13 +100,13 @@
     }
 
     .metric-label { color: var(--muted); font-size: .84rem; }
-    .metric-value { margin-top: 6px; font-size: 1.4rem; font-weight: 700; }
+    .metric-value { margin-top: 6px; font-size: 1.35rem; font-weight: 700; }
     .ok { color: var(--success); }
     .bad { color: var(--danger); }
 
     .layout {
       display: grid;
-      grid-template-columns: 1.1fr .9fr;
+      grid-template-columns: 1.2fr .8fr;
       gap: 16px;
     }
 
@@ -142,7 +142,7 @@
 
     .filters {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px,1fr));
+      grid-template-columns: repeat(5, minmax(120px,1fr));
       gap: 8px;
     }
 
@@ -187,10 +187,31 @@
       font-size: .82rem;
     }
 
-    @media (max-width: 1080px) {
-      .chart-wrap { min-height: 330px; max-height: 330px; }
-      .chart-canvas-container { height: 270px; max-height: 270px; }
-      .grid-cards { grid-template-columns: repeat(2, minmax(150px,1fr)); }
+    .toast-wrap {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      display: grid;
+      gap: 8px;
+    }
+
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      min-width: 220px;
+      box-shadow: var(--shadow);
+      font-size: .9rem;
+    }
+
+    .toast.ok { border-color: #22c55e66; }
+    .toast.bad { border-color: #ef444466; }
+
+    @media (max-width: 1100px) {
+      .grid-cards { grid-template-columns: repeat(3, minmax(140px,1fr)); }
       .layout { grid-template-columns: 1fr; }
       .filters { grid-template-columns: repeat(2, minmax(140px,1fr)); }
     }
@@ -202,11 +223,13 @@
   </style>
 </head>
 <body>
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <div class="container">
     <section class="topbar">
       <div class="title">
         <h1>🧠 Jarvis Cripto Dashboard</h1>
-        <p>Monitoramento avançado de performance e execução do bot em tempo real.</p>
+        <p>Bot mais seletivo + leitura de performance em tempo real.</p>
       </div>
       <div class="actions">
         <button class="btn success" onclick="startBot()">Iniciar Bot</button>
@@ -218,15 +241,16 @@
     <section class="grid-cards">
       <article class="card"><div class="metric-label">Saldo (USDT)</div><div class="metric-value" id="balance">--</div></article>
       <article class="card"><div class="metric-label">PNL Total</div><div class="metric-value" id="pnlTotal">--</div></article>
-      <article class="card"><div class="metric-label">Win Rate</div><div class="metric-value" id="winRate">--</div></article>
       <article class="card"><div class="metric-label">Status do Bot</div><div class="metric-value" id="status">--</div></article>
-      <article class="card"><div class="metric-label">Trades (Total)</div><div class="metric-value" id="totalTrades">--</div></article>
+      <article class="card"><div class="metric-label">Posições Abertas</div><div class="metric-value" id="openPositions">--</div></article>
+      <article class="card"><div class="metric-label">Win Rate (SELL)</div><div class="metric-value" id="winRate">--</div></article>
+      <article class="card"><div class="metric-label">Total Trades</div><div class="metric-value" id="totalTrades">--</div></article>
     </section>
 
     <section class="layout">
       <article class="card chart-wrap">
         <div class="panel-title">
-          <span>📈 Evolução de PNL</span>
+          <span>📈 PNL acumulado (baseado nos logs)</span>
           <small id="updatedAt">--</small>
         </div>
         <div class="chart-canvas-container">
@@ -235,7 +259,7 @@
       </article>
 
       <article class="card chart-wrap">
-        <div class="panel-title"><span>🎯 Distribuição BUY/SELL</span></div>
+        <div class="panel-title"><span>🎯 BUY vs SELL</span></div>
         <div class="chart-canvas-container">
           <canvas id="actionsChart" height="300"></canvas>
         </div>
@@ -243,7 +267,7 @@
     </section>
 
     <section class="card">
-      <div class="panel-title"><span>🔎 Filtros de Histórico (máx. 50)</span></div>
+      <div class="panel-title"><span>🔎 Filtros de Histórico (máx. 100)</span></div>
       <div class="filters">
         <input type="date" id="startDate" />
         <input type="date" id="endDate" />
@@ -253,7 +277,6 @@
           <option value="BUY">BUY</option>
           <option value="SELL">SELL</option>
         </select>
-        <input type="text" id="reason" placeholder="Motivo (ex: stop)" />
         <div style="display:flex; gap:8px;">
           <button class="btn primary" onclick="loadLogs()">Aplicar</button>
           <button class="btn" onclick="resetFilters()">Limpar</button>
@@ -278,34 +301,41 @@
       </table>
     </section>
 
-    <div class="footer-note">Atualização automática a cada 5 segundos • Estilo Jarvis ativo</div>
+    <div class="footer-note">Atualização automática a cada 5s • Jarvis style ✅</div>
   </div>
 
   <script>
-    // API fixa no endpoint atual da Railway (conforme solicitado)
     const API = "https://just-peace-production.up.railway.app";
 
     let pnlChart;
     let actionsChart;
+    let cachedLogs = [];
 
     function formatUSD(value) {
-      if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
-      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value));
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "--";
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
     }
 
     function formatPct(value) {
-      if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
-      return `${Number(value).toFixed(2)}%`;
-    }
-
-    function getPayload(json) {
-      return (json && typeof json === "object" && "data" in json) ? json.data : json;
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "--";
+      return `${n.toFixed(2)}%`;
     }
 
     async function fetchJson(url, options = {}) {
       const res = await fetch(url, options);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
+    }
+
+    function toast(msg, kind = "") {
+      const wrap = document.getElementById("toastWrap");
+      const el = document.createElement("div");
+      el.className = `toast ${kind}`.trim();
+      el.textContent = msg;
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
     }
 
     function updateThemeButton() {
@@ -319,6 +349,7 @@
       document.documentElement.setAttribute("data-theme", next);
       localStorage.setItem("jarvis_theme", next);
       updateThemeButton();
+      renderChartsFromLogs(cachedLogs);
     }
 
     function initTheme() {
@@ -327,63 +358,50 @@
       updateThemeButton();
     }
 
-    function updateCard(elId, value, className = "") {
+    function setCard(elId, value, cls = "") {
       const el = document.getElementById(elId);
       el.textContent = value;
       el.classList.remove("ok", "bad");
-      if (className) el.classList.add(className);
+      if (cls) el.classList.add(cls);
     }
 
-    async function loadDashboard() {
-      const raw = await fetchJson(`${API}/dashboard`);
-      const data = getPayload(raw) || {};
-
-      updateCard("balance", formatUSD(data.balance));
-
-      const pnlClass = Number(data.pnl || 0) > 0 ? "ok" : Number(data.pnl || 0) < 0 ? "bad" : "";
-      updateCard("pnlTotal", formatUSD(data.pnl), pnlClass);
-
-      updateCard("status", data.status || "--", data.status === "ON" ? "ok" : "bad");
-      document.getElementById("updatedAt").textContent = `Atualizado: ${new Date().toLocaleString("pt-BR")}`;
-    }
-
-    async function loadSummary() {
-      const raw = await fetchJson(`${API}/stats/summary`);
-      const data = getPayload(raw) || {};
-
-      updateCard("winRate", formatPct(data.win_rate), Number(data.win_rate || 0) >= 50 ? "ok" : "bad");
-      updateCard("totalTrades", String(data.total_trades ?? "--"));
-
-      renderActionsChart(data.total_buys || 0, data.total_sells || 0);
-    }
-
-    async function loadPnlHistory() {
-      const raw = await fetchJson(`${API}/stats/pnl-history?interval=day&limit=50`);
-      const data = getPayload(raw) || {};
-      const items = data.items || [];
-
-      renderPnlChart(items.map(i => new Date(i.time).toLocaleDateString("pt-BR")), items.map(i => Number(i.pnl_cumulative || 0)));
-    }
-
-    async function loadLogs() {
-      const params = new URLSearchParams();
+    function getFilteredLocalLogs(logs) {
+      const pair = document.getElementById("pair").value.trim().toUpperCase();
+      const action = document.getElementById("action").value;
       const start = document.getElementById("startDate").value;
       const end = document.getElementById("endDate").value;
-      const pair = document.getElementById("pair").value.trim();
-      const action = document.getElementById("action").value;
-      const reason = document.getElementById("reason").value.trim();
 
-      if (start) params.append("start", start);
-      if (end) params.append("end", end);
-      if (pair) params.append("pair", pair.toUpperCase());
-      if (action) params.append("action", action);
-      if (reason) params.append("reason", reason);
-      params.append("limit", "50");
+      return logs.filter(log => {
+        const t = new Date(log.time);
+        const d = t.toISOString().slice(0, 10);
 
-      const raw = await fetchJson(`${API}/logs?${params.toString()}`);
-      const payload = getPayload(raw) || {};
-      const logs = payload.items || [];
+        if (pair && String(log.pair || "").toUpperCase() !== pair) return false;
+        if (action && String(log.action || "").toUpperCase() !== action) return false;
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
 
+    function computeStats(logs) {
+      const totalTrades = logs.length;
+      const sells = logs.filter(l => String(l.action).toUpperCase() === "SELL");
+      const buys = logs.filter(l => String(l.action).toUpperCase() === "BUY");
+
+      const pnlTotal = logs.reduce((s, l) => s + (Number(l.pnl) || 0), 0);
+      const wins = sells.filter(l => Number(l.pnl) > 0).length;
+      const winRate = sells.length ? (wins / sells.length) * 100 : 0;
+
+      return {
+        totalTrades,
+        totalBuys: buys.length,
+        totalSells: sells.length,
+        pnlTotal,
+        winRate
+      };
+    }
+
+    function renderLogsTable(logs) {
       const tbody = document.getElementById("logsTable");
       tbody.innerHTML = "";
 
@@ -391,42 +409,34 @@
         const tr = document.createElement("tr");
         const pnl = Number(log.pnl || 0);
         const pnlClass = pnl > 0 ? "ok" : pnl < 0 ? "bad" : "";
+        const action = String(log.action || "").toUpperCase();
 
         tr.innerHTML = `
           <td>${new Date(log.time).toLocaleString("pt-BR")}</td>
-          <td>${log.pair}</td>
-          <td><span class="pill ${String(log.action || "").toLowerCase()}">${log.action}</span></td>
+          <td>${log.pair || "--"}</td>
+          <td><span class="pill ${action.toLowerCase()}">${action || "--"}</span></td>
           <td>${formatUSD(log.price)}</td>
           <td class="${pnlClass}">${formatUSD(pnl)}</td>
           <td>${log.reason || "--"}</td>
         `;
-
         tbody.appendChild(tr);
       });
 
       document.getElementById("logCount").textContent = `${logs.length} registros`;
     }
 
-    function resetFilters() {
-      ["startDate", "endDate", "pair", "action", "reason"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el.tagName === "SELECT") el.selectedIndex = 0;
-        else el.value = "";
-      });
-      loadLogs();
-    }
+    function renderPnlChart(logs) {
+      const ordered = [...logs].sort((a, b) => new Date(a.time) - new Date(b.time));
+      let cum = 0;
+      const labels = [];
+      const values = [];
 
-    async function startBot() {
-      await fetchJson(`${API}/bot/start`, { method: "POST" });
-      await refreshAll();
-    }
+      for (const l of ordered) {
+        cum += Number(l.pnl) || 0;
+        labels.push(new Date(l.time).toLocaleString("pt-BR"));
+        values.push(Number(cum.toFixed(6)));
+      }
 
-    async function stopBot() {
-      await fetchJson(`${API}/bot/stop`, { method: "POST" });
-      await refreshAll();
-    }
-
-    function renderPnlChart(labels, values) {
       const ctx = document.getElementById("pnlChart");
       if (pnlChart) pnlChart.destroy();
 
@@ -441,16 +451,21 @@
             backgroundColor: "rgba(79,124,255,0.18)",
             borderWidth: 2,
             fill: true,
-            tension: 0.32
+            tension: 0.25,
+            pointRadius: 0
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') } } },
+          plugins: {
+            legend: {
+              labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() }
+            }
+          },
           scales: {
-            x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } },
-            y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } }
+            x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim(), maxRotation: 0, autoSkip: true } },
+            y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() } }
           }
         }
       });
@@ -475,20 +490,69 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              labels: {
-                color: getComputedStyle(document.documentElement).getPropertyValue('--text')
-              }
+              labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() }
             }
           }
         }
       });
     }
 
+    function renderChartsFromLogs(logs) {
+      const stats = computeStats(logs);
+      renderPnlChart(logs);
+      renderActionsChart(stats.totalBuys, stats.totalSells);
+    }
+
+    async function loadDashboard() {
+      const data = await fetchJson(`${API}/dashboard`);
+      setCard("balance", formatUSD(data.balance));
+      setCard("status", data.status || "--", data.status === "ON" ? "ok" : "bad");
+      setCard("openPositions", String(data.open_positions ?? "--"));
+      document.getElementById("updatedAt").textContent = `Atualizado: ${new Date().toLocaleString("pt-BR")}`;
+    }
+
+    async function loadLogs() {
+      const data = await fetchJson(`${API}/logs`);
+      cachedLogs = Array.isArray(data) ? data : [];
+
+      const filtered = getFilteredLocalLogs(cachedLogs);
+      const stats = computeStats(filtered);
+
+      setCard("pnlTotal", formatUSD(stats.pnlTotal), stats.pnlTotal > 0 ? "ok" : stats.pnlTotal < 0 ? "bad" : "");
+      setCard("totalTrades", String(stats.totalTrades));
+      setCard("winRate", formatPct(stats.winRate), stats.winRate >= 50 ? "ok" : "bad");
+
+      renderLogsTable(filtered);
+      renderChartsFromLogs(filtered);
+    }
+
+    function resetFilters() {
+      ["startDate", "endDate", "pair", "action"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el.tagName === "SELECT") el.selectedIndex = 0;
+        else el.value = "";
+      });
+      loadLogs();
+    }
+
+    async function startBot() {
+      await fetchJson(`${API}/bot/start`, { method: "POST" });
+      toast("✅ Bot iniciado com sucesso", "ok");
+      await refreshAll();
+    }
+
+    async function stopBot() {
+      await fetchJson(`${API}/bot/stop`, { method: "POST" });
+      toast("🛑 Bot parado", "bad");
+      await refreshAll();
+    }
+
     async function refreshAll() {
       try {
-        await Promise.all([loadDashboard(), loadSummary(), loadPnlHistory(), loadLogs()]);
+        await Promise.all([loadDashboard(), loadLogs()]);
       } catch (error) {
         console.error("Erro ao atualizar dashboard:", error);
+        toast("Erro ao atualizar dashboard", "bad");
       }
     }
 
@@ -498,6 +562,5 @@
   </script>
 </body>
 </html>
-
 
 
