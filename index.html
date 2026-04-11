@@ -17,6 +17,22 @@
       --blue: #3b82f6;
       --yellow: #eab308;
       --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      --input-bg: rgba(15, 23, 42, 0.6);
+      --input-border: rgba(148, 163, 184, 0.28);
+      --list-border: rgba(148, 163, 184, 0.12);
+    }
+
+    body.light {
+      --bg-1: #f4f7ff;
+      --bg-2: #eaf0ff;
+      --card: rgba(255, 255, 255, 0.86);
+      --card-border: rgba(15, 23, 42, 0.12);
+      --text: #0f172a;
+      --muted: #475569;
+      --shadow: 0 16px 35px rgba(2, 6, 23, 0.12);
+      --input-bg: rgba(255, 255, 255, 0.9);
+      --input-border: rgba(100, 116, 139, 0.3);
+      --list-border: rgba(100, 116, 139, 0.15);
     }
 
     * {
@@ -30,9 +46,10 @@
       font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 10% 10%, #1d4ed8 0%, transparent 35%),
-        radial-gradient(circle at 90% 20%, #7c3aed 0%, transparent 30%),
+        radial-gradient(circle at 10% 10%, rgba(29, 78, 216, 0.35) 0%, transparent 35%),
+        radial-gradient(circle at 90% 20%, rgba(124, 58, 237, 0.30) 0%, transparent 30%),
         linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      transition: background 0.25s ease, color 0.25s ease;
     }
 
     .page {
@@ -62,6 +79,13 @@
       font-size: 0.95rem;
     }
 
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .chip {
       border: 1px solid var(--card-border);
       background: var(--card);
@@ -69,7 +93,24 @@
       padding: 8px 12px;
       border-radius: 999px;
       font-size: 0.85rem;
-      color: #dbeafe;
+      color: var(--text);
+    }
+
+    .theme-toggle {
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
     }
 
     .grid {
@@ -85,6 +126,7 @@
       border-radius: 16px;
       padding: 18px;
       box-shadow: var(--shadow);
+      transition: background 0.25s ease, border-color 0.25s ease;
     }
 
     .metric {
@@ -110,8 +152,8 @@
 
     .metric .hint {
       font-size: 0.82rem;
-      color: #cbd5e1;
-      opacity: 0.85;
+      color: var(--muted);
+      opacity: 0.95;
     }
 
     .controls {
@@ -178,13 +220,14 @@
     }
 
     .field input {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       color: var(--text);
       border-radius: 10px;
       padding: 11px 12px;
       font-size: 0.95rem;
       outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .field input:focus {
@@ -223,7 +266,7 @@
 
     .logs li {
       padding: 13px 18px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      border-bottom: 1px solid var(--list-border);
       display: grid;
       grid-template-columns: 190px 110px 100px 1fr;
       gap: 10px;
@@ -236,7 +279,7 @@
     }
 
     .log-time {
-      color: #cbd5e1;
+      color: var(--muted);
       font-size: 0.82rem;
     }
 
@@ -270,9 +313,9 @@
       border-color: rgba(234, 179, 8, 0.3);
     }
 
-    .pnl-pos { color: #86efac; font-weight: 700; }
-    .pnl-neg { color: #fca5a5; font-weight: 700; }
-    .pnl-zero { color: #e5e7eb; font-weight: 700; }
+    .pnl-pos { color: #16a34a; font-weight: 700; }
+    .pnl-neg { color: #dc2626; font-weight: 700; }
+    .pnl-zero { color: var(--text); font-weight: 700; }
 
     .empty {
       padding: 26px 18px;
@@ -302,9 +345,13 @@
     <header class="header">
       <div class="title-wrap">
         <h1>🚀 Jarvis Cripto Dashboard</h1>
-        <p>Monitoramento em tempo real do bot com estilo de plataforma profissional.</p>
+        <p>Monitoramento em tempo real do bot com visual premium.</p>
       </div>
-      <div class="chip" id="lastUpdate">Última atualização: --</div>
+
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Dark</button>
+        <div class="chip" id="lastUpdate">Última atualização: --</div>
+      </div>
     </header>
 
     <section class="grid">
@@ -382,6 +429,18 @@
       document.getElementById("lastUpdate").innerText = `Última atualização: ${now}`;
     }
 
+    function applyTheme(theme) {
+      document.body.classList.toggle("light", theme === "light");
+      const btn = document.getElementById("themeToggle");
+      btn.innerText = theme === "light" ? "☀️ Light" : "🌙 Dark";
+      localStorage.setItem("theme", theme);
+    }
+
+    function toggleTheme() {
+      const current = document.body.classList.contains("light") ? "light" : "dark";
+      applyTheme(current === "light" ? "dark" : "light");
+    }
+
     function updateStatus(status) {
       const statusBadge = document.getElementById("statusBadge");
       const statusText = document.getElementById("statusText");
@@ -400,6 +459,18 @@
       statusText.innerText = status ? `Bot atualmente: ${status}` : "Sem status";
     }
 
+    async function getPnlFallbackFromLogs() {
+      try {
+        const res = await fetch(`${API}/logs`);
+        const logs = await res.json();
+        if (!Array.isArray(logs)) return 0;
+        return logs.reduce((sum, item) => sum + (Number(item.pnl) || 0), 0);
+      } catch (error) {
+        console.error("Erro ao calcular PNL fallback:", error);
+        return 0;
+      }
+    }
+
     async function loadDashboard() {
       try {
         const res = await fetch(`${API}/dashboard`);
@@ -407,12 +478,17 @@
 
         document.getElementById("balance").innerText = formatUSD(data.balance);
 
+        let pnlValue = Number(data.pnl);
+        if (!Number.isFinite(pnlValue)) {
+          pnlValue = await getPnlFallbackFromLogs();
+        }
+
         const pnlElement = document.getElementById("pnl");
-        pnlElement.innerText = formatUSD(data.pnl);
+        pnlElement.innerText = formatUSD(pnlValue);
 
         pnlElement.classList.remove("pnl-pos", "pnl-neg", "pnl-zero");
-        if (data.pnl > 0) pnlElement.classList.add("pnl-pos");
-        else if (data.pnl < 0) pnlElement.classList.add("pnl-neg");
+        if (pnlValue > 0) pnlElement.classList.add("pnl-pos");
+        else if (pnlValue < 0) pnlElement.classList.add("pnl-neg");
         else pnlElement.classList.add("pnl-zero");
 
         updateStatus(data.status);
@@ -488,6 +564,9 @@
       }
     }
 
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    applyTheme(savedTheme);
+
     setInterval(() => {
       loadDashboard();
       loadLogs();
@@ -498,3 +577,5 @@
   </script>
 </body>
 </html>
+
+
